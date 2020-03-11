@@ -6,7 +6,7 @@
 /*   By: alkozma <marvin@42.fr>                     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2020/03/10 18:30:03 by alkozma           #+#    #+#             */
-/*   Updated: 2020/03/11 08:50:37 by alkozma          ###   ########.fr       */
+/*   Updated: 2020/03/11 09:03:30 by alkozma          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -64,6 +64,42 @@ void	parse_header(struct p4_header *h)
 	}
 }
 
+void	add_file(struct p4_header *h, char *filepath)
+{
+	struct stat		s;
+	struct p4_file	new;
+	char			*data;
+	int				fd;
+	uint32_t		checksum;
+
+	checksum = 0;
+	if (stat(filepath, &s) < 0)
+		return ;
+	memcpy(new.path, filepath, strlen(filepath));
+	new.path[strlen(filepath)] = 0;
+	new.checksum = 0;
+	new.size = s.st_size;
+	fd = open(filepath, O_RDONLY);
+	if (fd < 0)
+	{
+		patchy_error(PATH, filepath);
+		return ;
+	}
+	data = mmap(0, s.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
+	if (data == MAP_FAILED)
+	{
+		patchy_error(MEMFAIL, NULL);
+		return ;
+	}
+	for (int i = 0; i != s.st_size; i++)
+		new.checksum += (int)data[i];
+	if (!h)
+	{
+
+	}
+	printf("file: %s | size: %d | checksum: %d\n", new.path, new.size, new.checksum);
+}
+
 int		main(int argc, char **argv)
 {
 	void		*start;
@@ -80,4 +116,5 @@ int		main(int argc, char **argv)
 	if (start == MAP_FAILED)
 		return (patchy_error(MEMFAIL, NULL));
 	parse_header(start);
+	add_file(start, argv[2]);
 }
